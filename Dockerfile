@@ -4,37 +4,14 @@ FROM python:3.10-slim
 # Set environment variables to avoid prompts during installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install necessary packages and Google Chrome
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        wget \
-        gnupg2 \
-        unzip \
-        fonts-liberation \
-        libasound2 \
-        libatk-bridge2.0-0 \
-        libatk1.0-0 \
-        libcups2 \
-        libdbus-1-3 \
-        libgbm1 \
-        libgtk-3-0 \
-        libnspr4 \
-        libnss3 \
-        libx11-6 \
-        libx11-xcb1 \
-        libxcomposite1 \
-        libxdamage1 \
-        libxext6 \
-        libxfixes3 \
-        libxkbcommon0 \
-        libxrandr2 \
-        xdg-utils && \
-    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
-    echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends google-chrome-stable && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+# Install system dependencies, Google Chrome, and Python dependencies in one RUN to reduce layers
+RUN apt-get update && apt-get install -y wget \
+    && wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+    && apt install ./google-chrome-stable_current_amd64.deb -y \
+    && pip install --no-cache-dir -r requirements.txt \
+    # Clean up unnecessary files and lists to keep the image clean
+    && rm -rf /var/lib/apt/lists/* \
+    google-chrome-stable_current_amd64.deb
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
