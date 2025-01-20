@@ -7,18 +7,20 @@ WORKDIR /usr/src/app
 # Copy the local codebase into the container at the working directory
 COPY sb-runner.py requirements.txt ./
 
-# Install system dependencies and Google Chrome separately
-RUN apt-get update && apt-get install -y wget
-
-RUN wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-
-RUN apt install -y ./google-chrome-stable_current_amd64.deb && rm -f google-chrome-stable_current_amd64.deb
+# Install necessary packages and add Google's official repository
+RUN apt-get update && \
+    apt-get install -y wget gnupg --no-install-recommends && \
+    wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | apt-key add - && \
+    sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google-chrome.list' && \
+    apt-get update && \
+    apt-get install -y google-chrome-stable --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Clean up APT cache to reduce image size
-RUN rm -rf /var/lib/apt/lists/*
+# Ensure the entrypoint script is executable
+RUN chmod +x sb-runner.py
 
 # Run the Python script when the container launches
-CMD ["./entrypoint.sh"]
+CMD ["./sb-runner.py"]
